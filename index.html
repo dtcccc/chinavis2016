@@ -1,0 +1,166 @@
+<html>
+<body>
+<style>
+.axis path,
+.axis line{
+	fill: none;
+	stroke: black;
+	shape-rendering: crispEdges;
+}
+ 
+.axis text {
+	font-family: sans-serif;
+	font-size: 11px;
+}
+.ms {
+	display:block;
+	font-size:40;
+}
+</style>
+<script src="/d3.js" charset="utf-8"></script>
+<script>
+var dataset, width = innerWidth/3, height = innerHeight/2,sipm=[-1>>>0,0],dipm=[-1>>>0,0],spm=[1<<16,0],dpm=[1<<16,0],sip,dip;
+d3.csv("ip1.csv",function(error,csvdata){  
+    dataset=csvdata;
+	for(var i in dataset){
+		sip=ip2int(dataset[i].SRCIP);
+		dip=ip2int(dataset[i].DSTIP);
+		if(sip<sipm[0])sipm[0]=sip;
+		if(sip>sipm[1])sipm[1]=sip;
+		if(dip<dipm[0])dipm[0]=dip;
+		if(dip>dipm[1])dipm[1]=dip;
+		dataset[i]["sip"]=sip;
+		dataset[i]["dip"]=dip;
+		dataset[i].SRCPORT=parseInt(dataset[i].SRCPORT);
+		dataset[i].DSTPORT=parseInt(dataset[i].DSTPORT);
+		if(dataset[i].SRCPORT<spm[0])spm[0]=dataset[i].SRCPORT;
+		if(dataset[i].SRCPORT>spm[1])spm[1]=dataset[i].SRCPORT;
+		if(dataset[i].DSTPORT<dpm[0])dpm[0]=dataset[i].DSTPORT;
+		if(dataset[i].DSTPORT>dpm[1])dpm[1]=dataset[i].DSTPORT;
+	}
+	main();
+});
+function main(){
+	var w=innerWidth/2.1;
+	var h=innerHeight;
+	var padding=w/10;
+	var svg=d3.select("body")
+			.append("svg")
+			.attr("width",w)
+			.attr("height",h);
+	var xScale = d3.scale.linear()
+			.domain([sipm[0],sipm[1]])
+			.range([padding,w-padding]);
+	var yScale = d3.scale.linear()
+				.domain([dipm[0],dipm[1]])
+				.range([h-padding,padding]);
+	var xAxis = d3.svg.axis()
+				.scale(xScale)
+				.orient("bottom").ticks(15);
+	var xBar=svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(0," + (h - padding) + ")")
+				.call(xAxis)
+				.selectAll("text")
+				.text(function(d,i){return int2ip(d)});
+
+	var yAxis = d3.svg.axis()
+				.scale(yScale)
+				.orient("left").ticks(15);
+
+	var yBar=svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate("+padding+",0)")
+				.call(yAxis)
+				.selectAll("text")
+				.text(function(d,i){return int2ip(d)});
+	svg.selectAll("circle")
+		.data(dataset)
+		.enter()
+		.append("circle")
+		.attr("class",function(d){
+			return "id"+d.ID;
+		})
+		.attr("cx", function(d) {
+			return xScale(d.sip);
+		})
+		.attr("cy", function(d) {
+			return yScale(d.dip);
+		})
+		.attr("r",2)
+		.attr("fill", "blue");
+		
+		
+		
+		
+		
+	var svg1=d3.select("body")
+			.append("svg")
+			.attr("width",w)
+			.attr("height",h);
+	var xScale1 = d3.scale.linear()
+			.domain([spm[0],spm[1]])
+			.range([padding,w-padding]);
+	var yScale1 = d3.scale.linear()
+			.domain([dpm[0],dpm[1]])
+			.range([h-padding,padding]);
+	var xAxis1 = d3.svg.axis()
+			.scale(xScale1)
+			.orient("bottom").ticks(15);
+	var xBar1=svg1.append("g")
+			.attr("class", "axis")
+			.attr("transform", "translate(0," + (h - padding) + ")")
+			.call(xAxis1);
+
+	var yAxis1 = d3.svg.axis()
+			.scale(yScale1)
+			.orient("left").ticks(15);
+
+	var yBar1=svg1.append("g")
+			.attr("class", "axis")
+			.attr("transform", "translate("+padding+",0)")
+			.call(yAxis1);
+	svg1.selectAll("circle")
+		.data(dataset)
+		.enter()
+		.append("circle")
+		.attr("class",function(d){
+			return "id"+d.ID;
+		})
+		.attr("cx", function(d) {
+			return xScale1(d.SRCPORT);
+		})
+		.attr("cy", function(d) {
+			return yScale1(d.DSTPORT);
+		})
+		.attr("r",2)
+		.attr("fill", "blue");
+		
+	d3.selectAll("circle").on("mouseover",function(d){
+			d3.selectAll(".id"+d.ID)
+				.attr("fill","yellow")
+				.attr("r",10);
+				//console.log(d.ID);
+			})
+		.on("mouseout",function(d){
+			d3.selectAll(".id"+d.ID)
+				.attr("fill","blue")
+				.attr("r",2);
+			});
+}
+function ip2int(ip){
+	ip=ip.split(".");
+	ip=(ip[3]<<0)+(ip[2]<<8)+(ip[1]<<16)+(ip[0]<<24);
+	return ip>>>0;
+}
+function int2ip(ip){
+	var data=[];
+	data[0]=ip>>>24;
+	data[1]=(ip&0xff0000)>>>16;
+	data[2]=(ip&0xff00)>>>8;
+	data[3]=ip&0xff;
+	return data.join(".");
+}
+</script>
+</body>
+</html>
